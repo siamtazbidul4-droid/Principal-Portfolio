@@ -26,7 +26,13 @@ async function startServer() {
   } else {
     const distPath = path.join(process.cwd(), 'dist');
     app.use(express.static(distPath));
-    app.get('*', (req, res) => {
+    // SPA fallback: never swallow backend paths. Missing /api/* is already
+    // handled above as JSON 404; missing /uploads/* must stay a real 404 so
+    // broken images are visible instead of silently returning index.html (200).
+    app.get('*', (req, res, next) => {
+      if (req.path.startsWith('/api/') || req.path.startsWith('/uploads/')) {
+        return next();
+      }
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }

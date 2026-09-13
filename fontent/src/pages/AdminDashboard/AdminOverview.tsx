@@ -13,6 +13,7 @@ import {
   Database,
 } from 'lucide-react';
 import { ProjectService } from '../../services/project.service';
+import { resolveAssetUrl } from '../../services/api';
 import { ContactService } from '../../services/contact.service';
 import { ServiceItemService } from '../../services/service.service';
 import { TestimonialService } from '../../services/testimonial.service';
@@ -231,7 +232,7 @@ export function AdminOverview() {
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <img
-                    src={p.heroImage}
+                    src={resolveAssetUrl(p.heroImage)}
                     alt={p.title}
                     className="w-10 h-10 object-cover rounded-sm border border-[#2A2A2A] shrink-0"
                   />

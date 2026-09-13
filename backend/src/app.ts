@@ -1,6 +1,5 @@
 import express from 'express';
 import cors from 'cors';
-import path from 'path';
 import authRoutes from './routes/auth.routes.js';
 import projectRoutes from './routes/project.routes.js';
 import contactRoutes from './routes/contact.routes.js';
@@ -10,6 +9,7 @@ import settingsRoutes from './routes/settings.routes.js';
 import uploadRoutes from './routes/upload.routes.js';
 import { errorHandler, notFoundHandler } from './middleware/error.middleware.js';
 import { isMongoConnected } from './config/database.js';
+import { getUploadsDir } from './config/uploads.js';
 import { config } from './config/env.js';
 
 // Origins are compared after trimming whitespace and stripping any trailing slash.
@@ -67,8 +67,10 @@ export function createExpressApp() {
   app.use(express.json({ limit: '12mb' }));
   app.use(express.urlencoded({ extended: true, limit: '12mb' }));
 
-  // Static directory for uploaded images
-  const uploadsDir = path.join(process.cwd(), 'backend', 'data', 'uploads');
+  // Static directory for uploaded images.
+  // Uses the shared uploads-dir helper so a persistent disk mount path
+  // (UPLOADS_DIR) applies to both writes and static serving.
+  const uploadsDir = getUploadsDir();
   app.use('/uploads', express.static(uploadsDir));
 
   // Custom minimal security headers

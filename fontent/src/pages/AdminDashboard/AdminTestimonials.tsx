@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Plus, Edit2, Trash2, X, Save, Quote, User } from 'lucide-react';
 import { TestimonialService } from '../../services/testimonial.service';
 import { ITestimonial } from '../../types';
+import { resolveAssetUrl } from '../../services/api';
 import { Button } from '../../components/ui/Button';
 import { ImagePicker } from '../../components/ui/ImagePicker';
 import { DeleteConfirmModal } from '../../components/ui/DeleteConfirmModal';
@@ -141,7 +142,7 @@ export function AdminTestimonials() {
                 <div className="flex items-center gap-2.5">
                   {t.avatarUrl ? (
                     <img
-                      src={t.avatarUrl}
+                      src={resolveAssetUrl(t.avatarUrl)}
                       alt={t.name}
                       className="w-8 h-8 rounded-full object-cover border border-[#2A2A2A]"
                     />

@@ -20,6 +20,7 @@ import { ArchitectureDiagram } from '../../components/work/ArchitectureDiagram';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { IProject } from '../../types';
 import { ProjectService } from '../../services/project.service';
+import { resolveAssetUrl } from '../../services/api';
 
 export function ProjectDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -162,7 +163,7 @@ export function ProjectDetailPage() {
         {/* Hero Visual Image */}
         <div className="relative aspect-[16/9] bg-[#121212] border border-[#262626] rounded-sm overflow-hidden mb-16 shadow-2xl">
           <img
-            src={project.heroImage}
+            src={resolveAssetUrl(project.heroImage)}
             alt={project.title}
             className="w-full h-full object-cover object-center"
           />
@@ -271,7 +272,7 @@ export function ProjectDetailPage() {
                       className="relative aspect-[16/9] bg-[#121212] border border-[#242424] rounded-sm overflow-hidden"
                     >
                       <img
-                        src={img}
+                        src={resolveAssetUrl(img)}
                         alt={`${project.title} screenshot ${idx + 1}`}
                         className="w-full h-full object-cover"
                       />

@@ -11,6 +11,7 @@ import {
   Save,
 } from 'lucide-react';
 import { ProjectService } from '../../services/project.service';
+import { resolveAssetUrl } from '../../services/api';
 import { IProject } from '../../types';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
@@ -198,7 +199,7 @@ export function AdminProjects() {
                   <tr key={id} className="hover:bg-[#121212] transition-colors">
                     <td className="py-3 px-4 flex items-center gap-3">
                       <img
-                        src={project.heroImage}
+                        src={resolveAssetUrl(project.heroImage)}
                         alt={project.title}
                         className="w-10 h-10 rounded-sm object-cover border border-[#2A2A2A]"
                       />

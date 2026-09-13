@@ -3,9 +3,11 @@ import fs from 'fs';
 import path from 'path';
 import { requireAdminAuth } from '../middleware/auth.middleware.js';
 
+import { getUploadsDir } from '../config/uploads.js';
+
 const router = Router();
 
-const UPLOADS_DIR = path.join(process.cwd(), 'backend', 'data', 'uploads');
+const UPLOADS_DIR = getUploadsDir();
 
 // Ensure directory exists
 if (!fs.existsSync(UPLOADS_DIR)) {

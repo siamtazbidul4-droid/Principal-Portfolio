@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowUpRight, CheckCircle2 } from 'lucide-react';
 import { IProject } from '../../types';
 import { Badge } from '../ui/Badge';
+import { resolveAssetUrl } from '../../services/api';
 
 interface ProjectCardProps {
   key?: React.Key;
@@ -19,7 +20,7 @@ export function ProjectCard({ project, index }: ProjectCardProps) {
       {/* Top Image Preview Container */}
       <div className="relative aspect-[16/10] overflow-hidden bg-[#141414] border-b border-[#202020]">
         <img
-          src={project.heroImage}
+          src={resolveAssetUrl(project.heroImage)}
           alt={project.title}
           loading="lazy"
           className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500 opacity-85 group-hover:opacity-100"

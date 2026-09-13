@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { UploadCloud, Image as ImageIcon, X, Link, Check, AlertCircle, RefreshCw } from 'lucide-react';
 import { UploadService } from '../../services/upload.service';
+import { resolveAssetUrl } from '../../services/api';
 
 interface ImagePickerProps {
   label?: string;
@@ -106,7 +107,7 @@ export function ImagePicker({
         <div className="relative group border border-[#242424] bg-[#0E0E0E] rounded-sm p-3 flex flex-col sm:flex-row items-start sm:items-center gap-4">
           <div className="relative w-20 h-20 sm:w-24 sm:h-20 shrink-0 bg-[#161616] border border-[#2A2A2A] rounded-sm overflow-hidden flex items-center justify-center">
             <img
-              src={value}
+              src={resolveAssetUrl(value)}
               alt="Selected asset preview"
               className="w-full h-full object-cover"
               onError={(e) => {

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Quote, Building2, User } from 'lucide-react';
 import { ITestimonial } from '../../types';
 import { TestimonialService } from '../../services/testimonial.service';
+import { resolveAssetUrl } from '../../services/api';
 import { Container } from '../ui/Container';
 import { SectionHeading } from '../ui/SectionHeading';
 
@@ -54,7 +55,7 @@ export function TestimonialsSection() {
               <div className="mt-8 pt-6 border-t border-[#1A1A1A] flex items-center gap-3.5">
                 {t.avatarUrl ? (
                   <img
-                    src={t.avatarUrl}
+                    src={resolveAssetUrl(t.avatarUrl)}
                     alt={t.name}
                     className="w-10 h-10 rounded-full object-cover border border-[#2E2E2E]"
                   />
