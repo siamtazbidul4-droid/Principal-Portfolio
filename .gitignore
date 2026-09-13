@@ -1,0 +1,14 @@
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+# Runtime-generated persistent store (local fallback engine). Never commit live data.
+backend/data/store.json
+# Runtime-uploaded media files.
+backend/data/uploads/
+!backend/data/uploads/.gitkeep
+# Environment files (real secrets). Template is committed instead.
+.env*
+!.env.example

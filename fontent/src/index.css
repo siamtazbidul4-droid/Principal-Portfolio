@@ -1,0 +1,66 @@
+@import "tailwindcss";
+
+/* ==========================================================================
+   Global Modern Minimal Scrollbar System
+   Designed for high-precision, unobtrusive luxury UI across dark & light modes.
+   ========================================================================== */
+
+/* Webkit-based browsers (Chrome, Edge, Safari, Opera) */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(201, 167, 105, 0.22);
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  background-clip: content-box;
+  transition: background-color 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(201, 167, 105, 0.45);
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: rgba(201, 167, 105, 0.65);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Firefox standard specification */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(201, 167, 105, 0.25) transparent;
+}
+
+/* Light theme overrides */
+.light,
+[data-theme="light"] {
+  scrollbar-color: rgba(120, 110, 95, 0.28) transparent;
+}
+
+.light ::-webkit-scrollbar-thumb,
+[data-theme="light"] ::-webkit-scrollbar-thumb {
+  background: rgba(120, 110, 95, 0.25);
+}
+
+.light ::-webkit-scrollbar-thumb:hover,
+[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(120, 110, 95, 0.45);
+}
+
+/* Smooth scrolling and text rendering baseline */
+html {
+  scroll-behavior: smooth;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
