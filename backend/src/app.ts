@@ -12,12 +12,34 @@ import { errorHandler, notFoundHandler } from './middleware/error.middleware.js'
 import { isMongoConnected } from './config/database.js';
 import { config } from './config/env.js';
 
+// Origins are compared after trimming whitespace and stripping any trailing slash.
+// A common production misconfiguration is `CORS_ORIGINS=https://app.example.com/`
+// (trailing slash) or a value with a stray space, which would otherwise never match
+// the browser's Origin header (`https://app.example.com`) and silently break CORS.
+function normalizeOrigin(origin: string): string {
+  return origin.trim().replace(/\/+$/, '').toLowerCase();
+}
+
 export function createExpressApp() {
   const app = express();
 
   // Behind a reverse proxy (Render, Vercel, nginx), trust the first proxy hop so
   // that req.ip / X-Forwarded-For are correct for rate limiting and audit logs.
   app.set('trust proxy', 1);
+
+  // Pre-compute the normalized allow-list once so lookups are cheap and consistent.
+  const allowedOrigins = new Set(config.corsOrigins.map(normalizeOrigin));
+
+  // Surface the effective CORS policy on boot. Without this, a mismatched
+  // CORS_ORIGINS value results in the browser-only error
+  // "No 'Access-Control-Allow-Origin' header is present" with no server-side hint.
+  if (config.isProduction) {
+    console.log(
+      `[CORS] Production allow-list (${allowedOrigins.size}): ${
+        allowedOrigins.size > 0 ? Array.from(allowedOrigins).join(', ') : '<empty — cross-origin browser requests will be blocked>'
+      }`
+    );
+  }
 
   // CORS policy.
   // - Development: reflect the request origin so the Vite dev server works from any port.
@@ -33,7 +55,7 @@ export function createExpressApp() {
         if (!config.isProduction) {
           return callback(null, true);
         }
-        if (config.corsOrigins.includes(origin)) {
+        if (allowedOrigins.has(normalizeOrigin(origin))) {
           return callback(null, true);
         }
         console.warn(`[CORS] Blocked disallowed origin: ${origin}`);

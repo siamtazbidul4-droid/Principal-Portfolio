@@ -59,3 +59,45 @@ The application architecture is strictly partitioned into two primary applicatio
 
 ### 5. Modern Minimal Scrollbar System
 * Styled with unobtrusive subtle accents matching the dark luxury theme and light mode compatibility.
+## Production Deployment (Render)
+
+The repository is a **single-root project** (not an npm workspace): both the Express API and the React SPA are built from the root `package.json`. In production the Node server (`dist/server.cjs`) serves the built SPA from `dist/` **and** the `/api/*` routes, so it can be deployed as a single Render Web Service. A separate Static Site for the frontend is also supported (see below).
+
+### Option A — Single Web Service (recommended, simplest)
+
+| Setting | Value |
+| --- | --- |
+| Service type | Web Service |
+| Root directory | *(repository root)* |
+| Build command | `npm ci && npm run build` |
+| Start command | `npm start` |
+| Health check path | `/api/health` |
+| Environment | Node 22 (see `.node-version` / `engines`) |
+| `NODE_ENV` | `production` |
+| `PORT` | *(injected by Render — do not hardcode)* |
+
+The server binds to `0.0.0.0` and reads `process.env.PORT`, so it works on Render out of the box.
+
+### Option B — Split: Static Site (frontend) + Web Service (backend)
+
+The frontend is a pure SPA served separately from the API. Because Vite inlines `import.meta.env.VITE_*` values **at build time**, the API origin must be set in the **Static Site build environment**, then the site redeployed.
+
+| Setting | Value |
+| --- | --- |
+| Service type | Static Site |
+| Root directory | *(repository root)* |
+| Build command | `npm ci && npm run build` |
+| Publish directory | `dist` |
+| Env var (build-time) | `VITE_API_BASE_URL=https://principal-portfolio-backend.onrender.com/api` |
+
+Backend Web Service:
+
+| Setting | Value |
+| --- | --- |
+| Service type | Web Service |
+| Root directory | *(repository root)* |
+| Build command | `npm ci && npm run build` |
+| Start command | `npm start` |
+| Env var | `CORS_ORIGINS=https://principal-portfolio-forntend.onrender.com` |
+
+> **CORS note:** `CORS_ORIGINS` must list the exact origin the browser sends (`scheme://host`, no trailing slash, no path). If it is empty or mismatched, cross-origin requests fail with `No 'Access-Control-Allow-Origin' header is present`. The origin list is logged once at boot as `[CORS] Production allow-list (...)`, and origins are normalized (whitespace and trailing slashes are ignored) before comparison.
