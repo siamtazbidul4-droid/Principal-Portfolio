@@ -75,8 +75,31 @@ The repository is a **single-root project** (not an npm workspace): both the Exp
 | Environment | Node 22 (see `.node-version` / `engines`) |
 | `NODE_ENV` | `production` |
 | `PORT` | *(injected by Render — do not hardcode)* |
+| Persistent Disk | mounted at `/var/data` (see below — **required**) |
+| `UPLOADS_DIR` | `/var/data/uploads` (see below — **required**) |
 
 The server binds to `0.0.0.0` and reads `process.env.PORT`, so it works on Render out of the box.
+
+#### Persistent uploads (required for images to survive restarts)
+
+Uploaded images are written to disk and served from `/uploads/*`. Render's default
+container filesystem is **ephemeral** — files exist while the instance runs but are
+discarded on every restart/redeploy. Without durable storage, an image displays
+immediately after upload and then breaks after a refresh because the database still
+holds its `/uploads/...` path while the file itself is gone.
+
+Fix: attach a **Render Persistent Disk** and point `UPLOADS_DIR` inside it.
+
+| Setting | Value |
+| --- | --- |
+| Disk name | `uploads` |
+| Mount path | `/var/data` |
+| `UPLOADS_DIR` env var | `/var/data/uploads` |
+
+The server logs `[Uploads] WARNING: UPLOADS_DIR is not set in production ...` at boot
+when uploads would land on the ephemeral filesystem, and logs a `[Uploads] FATAL`
+line if the configured directory is not writable. `render.yaml` in the repository
+root declares the disk + env var together as a Blueprint.
 
 ### Option B — Split: Static Site (frontend) + Web Service (backend)
 

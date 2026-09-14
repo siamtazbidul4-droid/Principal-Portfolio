@@ -5,6 +5,7 @@ import { connectDatabase } from './backend/src/config/database.js';
 import { StorageService } from './backend/src/services/storage.service.js';
 import { createExpressApp } from './backend/src/app.js';
 import { config } from './backend/src/config/env.js';
+import { warnIfUploadsAreEphemeral } from './backend/src/config/uploads.js';
 
 async function startServer() {
   const PORT = config.port;
@@ -13,6 +14,10 @@ async function startServer() {
   // Connect to MongoDB if configured, otherwise fallback to persistent storage
   await connectDatabase();
   await StorageService.initialize();
+
+  // Surface an ephemeral/misconfigured uploads directory at boot rather than
+  // silently losing uploaded images on the next restart (see config/uploads.ts).
+  warnIfUploadsAreEphemeral();
 
   const app = createExpressApp();
 

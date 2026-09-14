@@ -12,3 +12,6 @@ backend/data/uploads/
 # Environment files (real secrets). Template is committed instead.
 .env*
 !.env.example
+# Windows reserved-device artifact that can be created accidentally by a shell
+# redirect (e.g. `... > nul`). Never a real project file; keep it out of git.
+nul
