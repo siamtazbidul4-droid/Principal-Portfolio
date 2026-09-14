@@ -27,7 +27,7 @@ export function Header() {
   const navLinks = [
     { label: 'Work', path: '/work' },
     { label: 'Services', path: '/services' },
-    { label: 'Philosophy', path: '/#philosophy' },
+    { label: 'Engineering Approach', path: '/#philosophy' },
     { label: 'Process', path: '/#process' },
     { label: 'About', path: '/about' },
     { label: 'Contact', path: '/contact' },
