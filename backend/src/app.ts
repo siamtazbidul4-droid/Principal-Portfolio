@@ -67,9 +67,9 @@ export function createExpressApp() {
   app.use(express.json({ limit: '12mb' }));
   app.use(express.urlencoded({ extended: true, limit: '12mb' }));
 
-  // Static directory for uploaded images.
-  // Uses the shared uploads-dir helper so a persistent disk mount path
-  // (UPLOADS_DIR) applies to both writes and static serving.
+  // Static directory for the LOCAL uploads fallback (development, and serving any
+  // pre-existing legacy `/uploads/...` records). Production uploads are stored on
+  // Cloudinary and referenced by absolute HTTPS URLs, so no disk is required.
   const uploadsDir = getUploadsDir();
   app.use('/uploads', express.static(uploadsDir));
 

@@ -15,9 +15,9 @@ The application architecture is strictly partitioned into two primary applicatio
 │   │   ├── middleware/            # JWT authentication & rate limiting
 │   │   ├── models/                # Mongoose schemas (Projects, Testimonials, Inquiries, Admin, Settings)
 │   │   ├── routes/                # Express API routes
-│   │   ├── services/              # StorageService (MongoDB + fallback), EmailService (HTTPS REST API)
+│   │   ├── services/              # StorageService (MongoDB + fallback), CloudinaryService, EmailService (HTTPS REST APIs)
 │   │   └── validators/            # Request payload validation
-│   └── uploads/                   # Local static uploads directory with public static serving
+│   └── data/uploads/              # Local development fallback only (production images live on Cloudinary)
 ├── fontent/
 │   └── src/
 │       ├── assets/                # Design assets and logos
@@ -51,7 +51,7 @@ The application architecture is strictly partitioned into two primary applicatio
 ### 3. Native File Explorer Image Picker
 * Administrative views support direct image file selection via the native operating system file explorer (`Choose Image`).
 * Supports PNG, JPEG/JPG, and WEBP formats with live preview, removal, and optional URL fallback.
-* Files are uploaded securely via `POST /api/upload` and served from `backend/uploads`.
+* Files are uploaded via `POST /api/upload`, which stores them on **Cloudinary** and returns a permanent HTTPS URL (local filesystem fallback when Cloudinary is unconfigured).
 
 ### 4. Audited In-App Delete Workflow
 * Destructive actions in the Admin panel utilize an in-app confirmation modal (`DeleteConfirmModal`).
@@ -75,31 +75,38 @@ The repository is a **single-root project** (not an npm workspace): both the Exp
 | Environment | Node 22 (see `.node-version` / `engines`) |
 | `NODE_ENV` | `production` |
 | `PORT` | *(injected by Render — do not hardcode)* |
-| Persistent Disk | mounted at `/var/data` (see below — **required**) |
-| `UPLOADS_DIR` | `/var/data/uploads` (see below — **required**) |
+| Plan | **Free** (no Persistent Disk, no paid upgrade) |
+| `CLOUDINARY_CLOUD_NAME` | *(backend env — required)* |
+| `CLOUDINARY_API_KEY` | *(backend env — required)* |
+| `CLOUDINARY_API_SECRET` | *(backend env — required, never exposed to the frontend)* |
 
 The server binds to `0.0.0.0` and reads `process.env.PORT`, so it works on Render out of the box.
 
-#### Persistent uploads (required for images to survive restarts)
+#### Persistent uploads via Cloudinary (Render Free plan compatible)
 
-Uploaded images are written to disk and served from `/uploads/*`. Render's default
-container filesystem is **ephemeral** — files exist while the instance runs but are
-discarded on every restart/redeploy. Without durable storage, an image displays
-immediately after upload and then breaks after a refresh because the database still
-holds its `/uploads/...` path while the file itself is gone.
+Uploaded images are stored on **Cloudinary**, and the database keeps the permanent
+absolute HTTPS URL that Cloudinary returns. This is deliberate: Render's container
+filesystem is **ephemeral** (and Persistent Disks are not available on the Free
+plan), so the previous "write to disk + Persistent Disk" approach could not work on
+a free instance — images displayed immediately after upload and then broke after a
+refresh/redeploy because the DB still held the `/uploads/...` path while the file was
+gone.
 
-Fix: attach a **Render Persistent Disk** and point `UPLOADS_DIR` inside it.
+Flow: Admin Panel → `POST /api/upload` → Cloudinary (signed server-side) → permanent
+`https://res.cloudinary.com/...` URL → MongoDB → rendered by the public site.
 
 | Setting | Value |
 | --- | --- |
-| Disk name | `uploads` |
-| Mount path | `/var/data` |
-| `UPLOADS_DIR` env var | `/var/data/uploads` |
+| Cloudinary env vars | `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` |
+| Optional | `CLOUDINARY_FOLDER` (default `principal-portfolio`) |
+| Render Persistent Disk | **not used** |
 
-The server logs `[Uploads] WARNING: UPLOADS_DIR is not set in production ...` at boot
-when uploads would land on the ephemeral filesystem, and logs a `[Uploads] FATAL`
-line if the configured directory is not writable. `render.yaml` in the repository
-root declares the disk + env var together as a Blueprint.
+In production the server **fails fast at boot** if the Cloudinary credentials are
+missing (the local filesystem is not durable on Render). In local development,
+where the credentials are unset, uploads transparently fall back to the local
+filesystem and are served from `/uploads`. The Cloudinary API secret is used only
+to sign requests on the server and is never sent to the browser. `render.yaml`
+declares the service and env vars (no disk).
 
 ### Option B — Split: Static Site (frontend) + Web Service (backend)
 

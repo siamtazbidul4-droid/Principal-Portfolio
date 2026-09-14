@@ -1,36 +1,31 @@
 # Render Blueprint — infrastructure as code for this repository.
 #
-# WHY THIS FILE EXISTS
-# --------------------
-# Uploaded images are written to disk by the Express backend (`/api/upload`) and
-# served back from `/uploads/*`. On a container host such as Render the default
-# containers filesystem is EPHEMERAL: files survive while the instance is running
-# but are discarded on every restart/redeploy. That is what made images display
-# immediately after upload and then break after a refresh/redeploy.
+# IMAGE STORAGE (Render FREE plan compatible)
+# -------------------------------------------
+# Uploaded images are stored on **Cloudinary**, and the database holds the
+# permanent absolute HTTPS URL that Cloudinary returns. Nothing is written to the
+# container filesystem for durable storage, so:
+#   - No Persistent Disk is used or required.
+#   - No paid Render plan is required (this service runs on `plan: free`).
+#   - Images survive restarts, redeploys, and container replacement.
 #
-# The fix is a Render Persistent Disk mounted into the service, plus
-# `UPLOADS_DIR` pointing at a directory inside that mount. The application code
-# already reads `UPLOADS_DIR` for BOTH writing and static serving
-# (`backend/src/config/uploads.ts`, used by `upload.routes.ts` and `app.ts`), so
-# no code path changes — only the deployment declares durable storage here.
+# This replaced an earlier Persistent-Disk approach, which is not available on
+# Render's Free plan.
 #
 # DEPLOYMENT NOTE
 # ---------------
-# This project runs as a SINGLE Render Web Service: `dist/server.cjs` serves the
+# The project runs as a SINGLE Render Web Service: `dist/server.cjs` serves the
 # built SPA from `dist/` AND the `/api/*` routes (see README "Option A").
 #
-# If you created the service manually in the Render dashboard (rather than from
-# this Blueprint), Render will NOT retroactively apply the disk below. In that
-# case either (a) delete and recreate the service from this Blueprint, or
-# (b) attach the disk + env var by hand in the dashboard — the values to use are
-# exactly the ones declared here. Behavior is identical either way.
+# Secrets are NOT stored in this file. Add their values in the Render dashboard
+# (each is declared below with `sync: false`).
 
 services:
   - type: web
     name: principal-portfolio
     runtime: node
     region: oregon
-    plan: starter
+    plan: free
     branch: main
     # Node 22 per .node-version / package.json engines.
     buildCommand: npm ci && npm run build
@@ -41,12 +36,18 @@ services:
       - key: NODE_ENV
         value: production
       # Render injects PORT automatically; do not hardcode it.
-      # Persistent upload storage: files live on the mounted disk below, and the
-      # app reads this path for uploads + static serving.
-      - key: UPLOADS_DIR
-        value: /var/data/uploads
-      # Secrets are set in the Render dashboard (sync: false) and are NOT stored
-      # here. Populate each of these on the service before the first deploy.
+      # Persistent image storage on Cloudinary (required in production). The
+      # server fails fast at boot if these are missing in production, because the
+      # local filesystem is ephemeral. Set the values in the Render dashboard.
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      # Optional: Cloudinary folder name for uploaded assets.
+      - key: CLOUDINARY_FOLDER
+        value: principal-portfolio
       - key: MONGODB_URI
         sync: false
       - key: JWT_SECRET
@@ -64,7 +65,3 @@ services:
       # Only needed for a split (Static Site + Web Service) deploy.
       - key: CORS_ORIGINS
         sync: false
-    disk:
-      name: uploads
-      mountPath: /var/data
-      sizeGB: 1

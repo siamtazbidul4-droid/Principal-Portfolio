@@ -15,8 +15,8 @@ async function startServer() {
   await connectDatabase();
   await StorageService.initialize();
 
-  // Surface an ephemeral/misconfigured uploads directory at boot rather than
-  // silently losing uploaded images on the next restart (see config/uploads.ts).
+  // Surface an image-storage misconfiguration at boot rather than silently losing
+  // uploaded images on the next restart (see config/uploads.ts).
   warnIfUploadsAreEphemeral();
 
   const app = createExpressApp();

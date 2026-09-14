@@ -4,12 +4,14 @@ import path from 'path';
 import { requireAdminAuth } from '../middleware/auth.middleware.js';
 
 import { getUploadsDir } from '../config/uploads.js';
+import { CloudinaryService } from '../services/cloudinary.service.js';
 
 const router = Router();
 
 const UPLOADS_DIR = getUploadsDir();
 
-// Ensure directory exists
+// Ensure the local fallback directory exists (used when Cloudinary is not
+// configured, e.g. local development). In production Cloudinary is the store.
 if (!fs.existsSync(UPLOADS_DIR)) {
   fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 }
@@ -49,15 +51,43 @@ router.post('/', requireAdminAuth as any, async (req: Request, res: Response): P
       return;
     }
 
-    // Sanitize filename or generate unique name
+    // Sanitize filename or generate unique name (used for the local fallback and
+    // as a human-readable hint for the Cloudinary asset).
     const sanitizedBase = (filename || 'image')
       .replace(/[^a-zA-Z0-9_-]/g, '_')
       .slice(0, 32);
     const uniqueFilename = `img_${Date.now()}_${Math.random().toString(36).substring(2, 8)}_${sanitizedBase}.${ext}`;
+
+    // Preferred path: upload to Cloudinary and store the permanent HTTPS URL.
+    // This is what makes images survive Render restarts/redeploys on the Free plan.
+    if (CloudinaryService.isConfigured()) {
+      const result = await CloudinaryService.uploadImage(dataUrl, { filename: uniqueFilename });
+      if (result.success && result.url) {
+        res.status(200).json({
+          success: true,
+          message: 'Image uploaded successfully.',
+          data: {
+            url: result.url,
+            filename: result.publicId || uniqueFilename,
+            size: buffer.length,
+            storage: 'cloudinary',
+          },
+        });
+        return;
+      }
+      // Do NOT silently persist a local-only URL in production: that is exactly the
+      // ephemeral-filesystem failure mode this service exists to eliminate.
+      res.status(502).json({
+        success: false,
+        message: result.error || 'Image storage provider is unavailable. Please try again.',
+      });
+      return;
+    }
+
+    // Local development fallback (Cloudinary not configured): write to disk and
+    // return the relative `/uploads/...` path, preserving the original behavior.
     const filePath = path.join(UPLOADS_DIR, uniqueFilename);
-
     await fs.promises.writeFile(filePath, buffer);
-
     const publicUrl = `/uploads/${uniqueFilename}`;
 
     res.status(200).json({
@@ -67,6 +97,7 @@ router.post('/', requireAdminAuth as any, async (req: Request, res: Response): P
         url: publicUrl,
         filename: uniqueFilename,
         size: buffer.length,
+        storage: 'local',
       },
     });
   } catch (error) {
