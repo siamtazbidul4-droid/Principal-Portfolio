@@ -62,10 +62,7 @@ export class CloudinaryService {
    * Returns `mode: 'skipped'` when Cloudinary is not configured so the caller can
    * transparently fall back to local-disk storage during development.
    */
-  public static async uploadImage(
-    dataUrl: string,
-    options: { filename?: string } = {}
-  ): Promise<CloudinaryUploadResult> {
+  public static async uploadImage(dataUrl: string): Promise<CloudinaryUploadResult> {
     if (!this.isConfigured()) {
       return { success: false, mode: 'skipped' };
     }
@@ -73,8 +70,16 @@ export class CloudinaryService {
     const { cloudName, apiKey, folder } = config.cloudinary;
     const timestamp = Math.floor(Date.now() / 1000);
 
-    // Parameters that participate in the signature must match exactly between the
-    // signed string and the multipart body.
+    // Parameters that participate in the signature must match EXACTLY the
+    // parameters sent in the multipart body below. Only `folder` and `timestamp`
+    // are signed, and only those two are sent (plus `file`, `api_key` and
+    // `signature`). This is the critical Cloudinary contract: signing a parameter
+    // that is not sent, or sending one that is not signed, yields
+    // "Invalid Signature" (HTTP 401). An earlier revision also sent
+    // `context=filename=...`, which was NOT part of the signed string and caused
+    // exactly that failure; `context` carried a cosmetic filename hint that nothing
+    // in the application reads, so it was removed rather than adding signing
+    // complexity for an unused field.
     const signedParams: Record<string, string> = {
       folder,
       timestamp: String(timestamp),
@@ -88,10 +93,6 @@ export class CloudinaryService {
       form.append('timestamp', String(timestamp));
       form.append('folder', folder);
       form.append('signature', signature);
-      if (options.filename) {
-        // Preserve a human-readable hint without controlling the public_id format.
-        form.append('context', `filename=${options.filename.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 64)}`);
-      }
 
       const response = await fetch(
         `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,

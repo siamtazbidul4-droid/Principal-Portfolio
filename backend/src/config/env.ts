@@ -5,6 +5,24 @@ import dotenv from 'dotenv';
 // template intended for documentation, never a secret source.
 dotenv.config();
 
+/**
+ * Normalize an environment value for Cloudinary.
+ * Pasted credentials frequently arrive with surrounding whitespace or wrapping
+ * quotes — dotenv strips matching quotes from a file, but a value entered directly
+ * in a hosting dashboard (e.g. Render) does not get that treatment. Either one
+ * silently breaks the request signature (the secret hashed is not the secret
+ * Cloudinary holds) or the upload endpoint (a quoted cloud name). Trimming and
+ * stripping a single pair of wrapping quotes makes the configuration robust to
+ * both input paths without affecting well-formed values.
+ */
+function cleanEnvValue(raw: string | undefined): string {
+  const value = (raw || '').trim();
+  if (value.length >= 2 && /^(".*"|'.*')$/.test(value)) {
+    return value.slice(1, -1).trim();
+  }
+  return value;
+}
+
 const nodeEnv = process.env.NODE_ENV || 'development';
 const isProduction = nodeEnv === 'production';
 
@@ -46,16 +64,16 @@ if (isProduction) {
   // next restart/redeploy. Enforced here for the same reason as MONGODB_URI:
   // durable external storage is mandatory on ephemeral hosts such as Render.
   const hasCloudinary = Boolean(
-    process.env.CLOUDINARY_CLOUD_NAME &&
-      process.env.CLOUDINARY_API_KEY &&
-      process.env.CLOUDINARY_API_SECRET
+    cleanEnvValue(process.env.CLOUDINARY_CLOUD_NAME) &&
+      cleanEnvValue(process.env.CLOUDINARY_API_KEY) &&
+      cleanEnvValue(process.env.CLOUDINARY_API_SECRET)
   );
   const hasPartialCloudinary =
     !hasCloudinary &&
     Boolean(
-      process.env.CLOUDINARY_CLOUD_NAME ||
-        process.env.CLOUDINARY_API_KEY ||
-        process.env.CLOUDINARY_API_SECRET
+      cleanEnvValue(process.env.CLOUDINARY_CLOUD_NAME) ||
+        cleanEnvValue(process.env.CLOUDINARY_API_KEY) ||
+        cleanEnvValue(process.env.CLOUDINARY_API_SECRET)
     );
   if (hasPartialCloudinary) {
     configErrors.push(
@@ -112,15 +130,15 @@ export const config = {
   // database. When absent (local development), uploads fall back to the local
   // filesystem via the legacy `/uploads` path so `npm run dev` still works.
   cloudinary: {
-    cloudName: process.env.CLOUDINARY_CLOUD_NAME || '',
-    apiKey: process.env.CLOUDINARY_API_KEY || '',
-    apiSecret: process.env.CLOUDINARY_API_SECRET || '',
-    folder: process.env.CLOUDINARY_FOLDER || 'principal-portfolio',
+    cloudName: cleanEnvValue(process.env.CLOUDINARY_CLOUD_NAME),
+    apiKey: cleanEnvValue(process.env.CLOUDINARY_API_KEY),
+    apiSecret: cleanEnvValue(process.env.CLOUDINARY_API_SECRET),
+    folder: cleanEnvValue(process.env.CLOUDINARY_FOLDER) || 'principal-portfolio',
     // Whether uploads should be routed to Cloudinary instead of local disk.
     isConfigured: Boolean(
-      process.env.CLOUDINARY_CLOUD_NAME &&
-        process.env.CLOUDINARY_API_KEY &&
-        process.env.CLOUDINARY_API_SECRET
+      cleanEnvValue(process.env.CLOUDINARY_CLOUD_NAME) &&
+        cleanEnvValue(process.env.CLOUDINARY_API_KEY) &&
+        cleanEnvValue(process.env.CLOUDINARY_API_SECRET)
     ),
   },
 };

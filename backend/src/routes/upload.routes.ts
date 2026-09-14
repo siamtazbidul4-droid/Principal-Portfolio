@@ -61,7 +61,7 @@ router.post('/', requireAdminAuth as any, async (req: Request, res: Response): P
     // Preferred path: upload to Cloudinary and store the permanent HTTPS URL.
     // This is what makes images survive Render restarts/redeploys on the Free plan.
     if (CloudinaryService.isConfigured()) {
-      const result = await CloudinaryService.uploadImage(dataUrl, { filename: uniqueFilename });
+      const result = await CloudinaryService.uploadImage(dataUrl);
       if (result.success && result.url) {
         res.status(200).json({
           success: true,
